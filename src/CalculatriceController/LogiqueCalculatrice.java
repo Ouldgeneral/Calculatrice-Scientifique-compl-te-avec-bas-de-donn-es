@@ -246,6 +246,7 @@ public class LogiqueCalculatrice {
                 x=x.replace(target, target2);
             }
         }
+        if(x.contains("(") && x.contains(")") && (x.indexOf("(")<x.indexOf(")")))x=detecteEtGereParenthese(x);
         //Partie principale du calcule 
         double resultat;
         String[] operations={"\\+","\\-","\\*","\\/","\\^"};//Liste des operations fondamentale +-*/ et ^ pour la puissance
