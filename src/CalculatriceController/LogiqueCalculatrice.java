@@ -39,7 +39,14 @@ public class LogiqueCalculatrice {
         operation=operation.replace("E+", "E");//remplacer l'exposant positif 
         if(operation.startsWith("+"))operation=operation.substring(1);
         ////A ne pas effacer pour eviter les erreur↑↑↑↑↑↑
-        
+        //gerer le cas -2^2=4 car c'est -4
+        pattern=Pattern.compile("\\-\\d+\\.?\\d*\\^\\d");
+        matcher=pattern.matcher(operation);
+        while(matcher.find()){
+            String target=matcher.group();
+            String target2="-1*"+target.substring(1);
+            operation=operation.replace(target, target2);
+        }
         //Gerer la multiplication des constantes exemple 3π4->3*π*4
         operation=gereMultiplicationImplicit(operation, "\\d", "π");
         operation=gereMultiplicationImplicit(operation, "\\d", "e");
@@ -202,7 +209,7 @@ public class LogiqueCalculatrice {
             sansParenthese=sansParenthese.replace(")", "");
             texte=texte.replace(expression, faitCalcule(sansParenthese));
         }
-        pattern=Pattern.compile("[(]-?\\d+\\.?\\d*[\\/\\*\\+\\-\\^]*\\d*\\.?\\d*[)]");
+        pattern=Pattern.compile("[(][-?\\d+\\.?\\d*[\\/\\*\\+\\-\\^]*\\d*\\.?\\d*]+[)]");
         matcher=pattern.matcher(texte);
         while(matcher.find()){
             expressions.add(matcher.group());
