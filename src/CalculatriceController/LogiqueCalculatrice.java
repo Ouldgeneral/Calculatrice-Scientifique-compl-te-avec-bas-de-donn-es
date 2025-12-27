@@ -270,7 +270,8 @@ public class LogiqueCalculatrice {
                 nombre2=Double.parseDouble(bornes[1]);
             }catch(NumberFormatException e){
                 try{
-                    nombre2=Double.parseDouble(faitCalcule(bornes[1]));
+                    nombre2=Double.parseDouble(faitCalcule("-".equals(operationActuelle)?calculer("-"+bornes[1]):bornes[1]));
+                    nombre2=("-".equals(operationActuelle))?-nombre2:nombre2;
                 }catch(NumberFormatException xs){
                     return "Syntax Error";
                 }
