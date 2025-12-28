@@ -26,6 +26,7 @@ public class LogiqueCalculatrice {
     
     private final String[] fonctionSpeciale={"³√","√","Ln","log","acosh","asinh","atanh","cosh","sinh","tanh"};
     private final String[] fonctionTrigo={"acos","asin","atan","cos","sin","tan"};
+    private final String[] operationErreur={"/*","*/","-/","/-","/+","+/","*+","+*","-*","*-","\\^","^\\","^*","*^","-^","+^"};
     
     
     /**
@@ -35,8 +36,15 @@ public class LogiqueCalculatrice {
      */
     public String calculer(String operation){
         ////A ne pas effacer pour eviter les erreur↓↓↓↓↓
-        operation=operation.replace("E-", "*10^-");//remplacer l'exposant negatif par sa representation numerique 3E-2->3*10^-2
+        for(String erreur:operationErreur){
+            if(operation.contains(erreur))return "Syntax Error";
+        }
         operation=operation.replace("E+", "E");//remplacer l'exposant positif 
+        operation=operation.replace("-(", "-(1)*(");
+        operation=operation.replace("+-", "-");
+        operation=operation.replace("-+", "-");
+        operation=operation.replace("--", "+");
+        operation=operation.replace(")(", ")*(");
         if(operation.startsWith("+"))operation=operation.substring(1);
         ////A ne pas effacer pour eviter les erreur↑↑↑↑↑↑
         //gerer le cas -2^2=4 car c'est -4
@@ -46,6 +54,7 @@ public class LogiqueCalculatrice {
             String target=matcher.group();
             String target2="-1*"+target.substring(1);
             operation=operation.replace(target, target2);
+            matcher=pattern.matcher(operation);
         }
         //Gerer la multiplication des constantes exemple 3π4->3*π*4
         operation=gereMultiplicationImplicit(operation, "\\d", "π");
@@ -60,6 +69,7 @@ public class LogiqueCalculatrice {
             String target=matcher.group();
             String target2=target.replace(target, ")*"+target.substring(1));
             operation=operation.replace(target, target2);
+            matcher=pattern.matcher(operation);
         }
         //Gerer la multiplication implicit des parenthese exemple 3(4-1)->3*(4-1)
         pattern=Pattern.compile("\\d\\(");
@@ -68,6 +78,7 @@ public class LogiqueCalculatrice {
             String target=matcher.group();
             String target2=target.replace(target, target.substring(0,1)+"*(");
             operation=operation.replace(target, target2);
+            matcher=pattern.matcher(operation);
         }
         //Remplacer les valeur infini par le symbole infini
         //Gerer le cas -x-y 
@@ -79,6 +90,7 @@ public class LogiqueCalculatrice {
             target2="-"+faitCalcule(target2.substring(1));
             operation=operation.replace(target, target2);
             operation=calculer(operation);
+            matcher=pattern.matcher(operation);
         }
         operation=detecteEtGereParenthese(operation).replace("Infinity", "∞");
         //Gerer la multiplication implicite des fonctions exemple 3cos(x)->3*cos(x)
@@ -122,6 +134,7 @@ public class LogiqueCalculatrice {
                 }
                 operation=operation.replace(target, (target2+"").replace(".0.", ""));
                 operation=calculer(operation);
+                matcher=pattern.matcher(operation);
             }
         }
         for(String fonction:fonctionTrigo){
@@ -141,6 +154,7 @@ public class LogiqueCalculatrice {
                 }
                 operation=operation.replace(target, (target2+"").replace(".0.", ""));
                 operation=calculer(operation);
+            matcher=pattern.matcher(operation);
             }
         }
         //gerer la fonction factorielle n!
@@ -156,6 +170,7 @@ public class LogiqueCalculatrice {
                 return factorielle(number);
             }
             operation=operation.replace(target+"!", number+"");
+            matcher=pattern.matcher(operation);
         }
         return faitCalcule(operation);
     }
@@ -170,6 +185,7 @@ public class LogiqueCalculatrice {
             String target=matcher.group();
             String targetGere=target.replace(but, "*"+but);
             texte=texte.replace(target,targetGere);
+        matcher=pattern.matcher(texte);
         }
         pattern=Pattern.compile(but+schema);
         matcher=pattern.matcher(texte);
@@ -177,6 +193,7 @@ public class LogiqueCalculatrice {
             String target=matcher.group();
             String targetGere=target.replace(but, but+"*");
             texte=texte.replace(target,targetGere);
+        matcher=pattern.matcher(texte);
         }
         return texte;
     }
@@ -190,6 +207,7 @@ public class LogiqueCalculatrice {
             String target=matcher.group();
             String targetGere=target.replace(but, "*"+but);
             texte=texte.replace(target,targetGere);
+        matcher=pattern.matcher(texte);
         }
         return texte;
     }
@@ -204,6 +222,7 @@ public class LogiqueCalculatrice {
         while(matcher.find()){
             expressions.add(matcher.group());
         }
+        matcher=pattern.matcher(texte);
         for(String expression:expressions){
             String sansParenthese=expression.replace("(", "");
             sansParenthese=sansParenthese.replace(")", "");
@@ -220,6 +239,7 @@ public class LogiqueCalculatrice {
             texte=texte.replace(expression, faitCalcule(sansParenthese));
         }
         
+        matcher=pattern.matcher(texte);
         if(matcher.find())texte=detecteEtGereParenthese(texte);
         return texte;
     }
@@ -231,7 +251,6 @@ public class LogiqueCalculatrice {
     private String faitCalcule(String x){
         if(x.contains("∞"))return x;
         if(x.contains("Infinity"))return (x.startsWith("-"))?"-∞":"+∞";
-        x=x.replace("E-", "*10^-");//remplacer l'exposant negatif par sa representation numerique 3E-2->3*10^-2
         x=x.replace("E+", "E");//remplacer l'exposant positif 
         if(x.startsWith("+"))x=x.substring(1);//A ne surtout pas effacer
         //Cette partie s'occupe de la gestion de la puissance negative
@@ -244,12 +263,13 @@ public class LogiqueCalculatrice {
                 String target2=target.replace("^-", "^");
                 target2="1/"+faitCalcule(target2);
                 x=x.replace(target, target2);
+                matcher=pattern.matcher(x);
             }
         }
         if(x.contains("(") && x.contains(")") && (x.indexOf("(")<x.indexOf(")")))x=detecteEtGereParenthese(x);
         //Partie principale du calcule 
         double resultat;
-        String[] operations={"\\+","\\-","\\*","\\/","\\^"};//Liste des operations fondamentale +-*/ et ^ pour la puissance
+        String[] operations={"E-","\\+","\\-","\\*","\\/","\\^"};//Liste des operations fondamentale +-*/ et ^ pour la puissance
         String[] bornes=new String[2];
         String operationActuelle="";
         
@@ -287,6 +307,7 @@ public class LogiqueCalculatrice {
         }
         
         switch (operationActuelle) {
+            case "E-" -> resultat=nombre1*Math.pow(10, -nombre2);
             case "+" -> resultat=nombre1+nombre2;
             case "-" -> resultat=nombre1-nombre2;
             case "*" -> resultat=nombre1*nombre2;
